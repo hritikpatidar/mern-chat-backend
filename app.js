@@ -22,7 +22,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index1.html');
+    res.sendFile(__dirname + '/index1.html'); 
 });
 
 let port = process.env.PORT || 3000
