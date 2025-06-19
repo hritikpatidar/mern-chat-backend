@@ -1,130 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe Payment</title>
-    <script src="https://js.stripe.com/v3/"></script>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Socket.IO chat</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
+            margin: 0;
+            padding-bottom: 3rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        #card-element {
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 5px;
+        #form {
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.25rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            height: 3rem;
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
         }
 
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
+        #input {
             border: none;
-            cursor: pointer;
+            padding: 0 1rem;
+            flex-grow: 1;
+            border-radius: 2rem;
+            margin: 0.25rem;
         }
 
-        button:hover {
-            background-color: #0056b3;
+        #input:focus {
+            outline: none;
+        }
+
+        #form>button {
+            background: #333;
+            border: none;
+            padding: 0 1rem;
+            margin: 0.25rem;
+            border-radius: 3px;
+            outline: none;
+            color: #fff;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #messages>li {
+            padding: 0.5rem 1rem;
+        }
+
+        #messages>li:nth-child(odd) {
+            background: #efefef;
         }
     </style>
 </head>
 
 <body>
-    <h2>Stripe Payment Integration</h2>
-    <form id="payment-form">
-        <div id="card-element"><!-- Stripe Card Element --></div>
-        <button type="submit">Start Subscription</button>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+        <input id="input" autocomplete="off" /><button>Send</button>
+        <button id="toggle-btn">Disconnect</button>
     </form>
-
-    <script>
-        const stripe = Stripe("pk_test_51OPJYkSGtQz1W8wWI3cMuuRlquOKk2WUJdWkiPrIpIjGBut51f13RcUFNJ4zfKrfwhkvQeqadLm1rdadURsETchm00bvc3r2qe");
-        const elements = stripe.elements();
-        const cardElement = elements.create("card");
-        cardElement.mount("#card-element");
-
-        document.getElementById("payment-form").addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const customer_id = await createCustomer("user@example.com", "John Doe");
-            const payment_method_id = await savePaymentMethod(customer_id, cardElement);
-            const { subscription_id, payment_intent_id } = await createSubscription(customer_id, "price_1QqDOLSGtQz1W8wW5HXRBMw0");
-            await confirmPayment(payment_intent_id, payment_method_id);
-        });
-
-        async function createCustomer(email, name) {
-            const response = await fetch("/api/admin/create-customer", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, name })
-            });
-            const result = await response.json();
-            return result.customer_id;
-        }
-
-        async function savePaymentMethod(customer_id, cardElement) {
-            const { paymentMethod, error } = await stripe.createPaymentMethod({
-                type: "card",
-                card: cardElement,
-            });
-
-            if (error) {
-                console.error("❌ Error:", error.message);
-                return;
-            }
-
-            const response = await fetch("/api/admin/save-payment-method", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_id, payment_method_id: paymentMethod.id })
-            });
-            const result = await response.json();
-            return paymentMethod.id;
-        }
-
-        async function createSubscription(customer_id, price_id) {
-            const response = await fetch("/api/admin/create-subscription", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_id, price_id })
-            });
-            const result = await response.json();
-            return { subscription_id: result.subscription_id, payment_intent_id: result.payment_intent_id };
-        }
-
-        async function confirmPayment(payment_intent_id, payment_method_id) {
-            const response = await fetch("/api/admin/confirm-payment", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ payment_intent_id, payment_method_id })
-            });
-
-            const result = await response.json();
-            console.log("🔍 Response from Backend:", result);
-
-            if (!result.client_secret) {
-                console.error("❌ client_secret is undefined!");
-                return;
-            }
-
-            console.log("⚠️ Authentication Required, Handling 3D Secure...");
-
-            const stripe = await loadStripe("pk_test_51OPJYkSGtQz1W8wWI3cMuuRlquOKk2WUJdWkiPrIpIjGBut51f13RcUFNJ4zfKrfwhkvQeqadLm1rdadURsETchm00bvc3r2qe");  // ✅ Ensure Stripe is Loaded
-            const { paymentIntent, error } = await stripe.confirmCardPayment(result.client_secret);
-
-            if (error) {
-                console.error("❌ Authentication Failed:", error.message);
-                alert("❌ Payment Failed: " + error.message);
-            } else {
-                console.log("✅ Payment Successful:", paymentIntent);
-                alert("✅ Payment Successful! Subscription is now active.");
-            }
-        }
-
-    </script>
 </body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+    const toggleButton = document.getElementById('toggle-btn');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (input.value) {
+            socket.emit('chat message', input.value);
+            input.value = '';
+        }
+    });
+
+    toggleButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (socket.connected) {
+            toggleButton.innerText = 'Connect';
+            socket.disconnect();
+            const item = document.createElement('li');
+            item.textContent = "Connection lost";
+            messages.appendChild(item);
+        } else {
+            toggleButton.innerText = 'Disconnect';
+            socket.connect();
+            const item = document.createElement('li');
+            item.textContent = "Connection stablished";
+            messages.appendChild(item);
+        }
+    });
+
+    socket.on('chat message', (msg) => {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+</script>
 
 </html>
