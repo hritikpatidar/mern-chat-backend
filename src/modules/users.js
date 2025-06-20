@@ -6,7 +6,7 @@ const user_schema = new mongoose.Schema(
             type: String,
             default: null
         },
-        nick_name: {
+        user_name: {
             type: String,
             default: null
         },
@@ -30,27 +30,7 @@ const user_schema = new mongoose.Schema(
             type: String,
             require: false
         },
-        measurement_unit: {
-            type: String,
-            default: null
-        },
-        weight: {
-            type: Object,
-            default: null
-        },
-        height: {
-            type: Object,
-            default: null
-        },
-        body_mass_index: {
-            type: String,
-            default: null
-        },
         language: {
-            type: String,
-            default: null
-        },
-        ethnicity: {
             type: String,
             default: null
         },
@@ -74,22 +54,6 @@ const user_schema = new mongoose.Schema(
             type: Number,
             default: null
         },
-        is_expires: {
-            type: Number,
-            default: null
-        },
-        terra_user_id: {
-            type: String,
-            default: null
-        },
-        terra_connections: {
-            type: Boolean,
-            default: false
-        },
-        login_with_id: {
-            type: String,
-            default: null
-        },
         login_with: {
             type: String, //Self, Google, Facebook
             default: 'Self'
@@ -97,22 +61,6 @@ const user_schema = new mongoose.Schema(
         is_verify: {
             type: Boolean,
             default: false
-        },
-        stripe_customer: {
-            type: String,
-            default: null
-        },
-        active_plan: {
-            type: String,
-            default: "Free", //Expired, Free, Subscription name
-        },
-        phone_flg: {
-            type: String,
-            default: null
-        },
-        country_flg: {
-            type: String,
-            default: null
         },
         friends: [{
             type: mongoose.Schema.Types.ObjectId,
@@ -122,42 +70,6 @@ const user_schema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'users'
         }],
-        who_can_find_me: {
-            type: String,
-            default: null
-        },
-        who_can_see_my_personal_data: {
-            type: String,
-            default: null
-        },
-        who_can_view_my_profile: {
-            type: String,
-            default: null
-        },
-        who_can_message_me: {
-            type: String,
-            default: null
-        },
-        who_can_leave_comment: {
-            type: String,
-            default: null
-        },
-        share_my_activities_with: {
-            type: String,
-            default: null
-        },
-        share_my_challenges_with: {
-            type: String,
-            default: null
-        },
-        share_my_events_with: {
-            type: String,
-            default: null
-        },
-        share_my_achivements_with: {
-            type: String,
-            default: null
-        }
     },
     {
         timestamps: true

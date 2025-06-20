@@ -39,7 +39,6 @@ const signup = async (req, res) => {
                 'string.empty': 'Password Cannot Be An Empty Field',
                 'any.required': 'Password Is A Required Field',
             }),
-            phone_flg: joi.optional()
         });
         await schema.validateAsync(req.body);
         const { name, email, phone_no, dob, gender, password, phone_flg } = req.body;
@@ -103,6 +102,7 @@ const login = async (req, res) => {
                 'string.empty': 'Password Cannot Be An Empty Field',
                 'any.required': 'Password Is A Required Field',
             }),
+            fcm_token: joi.optional()
         });
         await schema.validateAsync(req.body);
         const find_user = await userCollection.findOne({ email: req.body.email });

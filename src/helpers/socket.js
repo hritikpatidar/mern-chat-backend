@@ -235,6 +235,7 @@ const setupSocket = (server) => {
                         members: [isSenderId, isReceiverId]
                     });
                     getConversation = newConversation.toObject();
+                    io.emit("conversationCreateResult", newConversation.toObject());
                 }
                 // 💬 SINGLE CHAT
                 const addedMessage = await messageCollection.create({
