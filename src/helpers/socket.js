@@ -69,6 +69,9 @@ const setupSocket = (server) => {
                         path: 'members',
                         select: 'name email phone_no profile'
                     })
+                     .sort({
+                        updatedAt: -1,
+                    })
                     .lean();
 
                 if (!conversations.length) {
@@ -123,6 +126,9 @@ const setupSocket = (server) => {
                     .populate({
                         path: 'members',
                         select: 'name email phone_no profile'
+                    })
+                    .sort({
+                        updatedAt: -1,
                     })
                     .lean();
                 if (!conversations.length) {
@@ -249,14 +255,14 @@ const setupSocket = (server) => {
                 });
 
                 const unReadMessages = await messageCollection.countDocuments({
-                    conversation_id: conversationId,
+                    conversation_id: getConversation._id,
                     isReceiverId: isSenderId,
                     status: "sent",
                 });
 
 
                 const messageData = {
-                    conversation_id: conversationId,
+                    conversation_id: getConversation._id,
                     _id: addedMessage._id,
                     isSenderId,
                     isReceiverId,
