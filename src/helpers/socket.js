@@ -159,7 +159,7 @@ const setupSocket = (server) => {
                     const unReadMessages = await messageCollection.countDocuments({
                         conversation_id: conversation._id,
                         isReceiverId: userId,
-                        status: "sent",
+                        status: "delivered",
                     })
 
                     const latestMessage = await messageCollection.findOne({ conversation_id: conversation._id }).sort({
@@ -303,7 +303,6 @@ const setupSocket = (server) => {
                     status: "sent",
                 });
 
-                console.log("addedMessage", addedMessage)
                 const messageData = {
                     conversation_id: getConversation._id,
                     _id: addedMessage._id,
@@ -325,11 +324,28 @@ const setupSocket = (server) => {
         });
 
         socket.on("viewMessage", async (message_id, conversationType) => {
-            if (conversationType === "single") await messageCollection.updateOne({ _id: message_id }, { status: "read" })
-            else await groupMessageCollection.updateOne({ _id: message_id }, { status: "read" })
+            if (conversationType === "single") await messageCollection.updateOne({ _id: message_id, status: { $ne: "read" } }, { $set: { status: "read" } })
+            else await groupMessageCollection.updateOne({ _id: message_id, status: { $ne: "read" } }, { $set: { status: "read" } })
 
             io.emit("viewResult", { message_id, status: "read" });
         });
+
+        socket.on("deliveredMessage", async (message_id, conversationType) => {
+            let result;
+            const filter = { _id: message_id, status: { $ne: "delivered" } };
+            const update = { $set: { status: "delivered" } };
+
+            if (conversationType === "single") {
+                result = await messageCollection.updateOne(filter, update);
+            } else {
+                result = await groupMessageCollection.updateOne(filter, update);
+            }
+
+            if (result.modifiedCount > 0) {
+                io.emit("deliveredResult", { message_id, status: "delivered" });
+            }
+        });
+
 
         socket.on("disconnect", () => disconnect(socket));
     });
