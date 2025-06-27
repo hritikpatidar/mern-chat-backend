@@ -6,6 +6,8 @@ import { sendEmail, send_email_verification } from "../helpers/nodemailer.js";
 import calculateAge from "../helpers/age_calculater.js";
 import { uploadImageOnS3 } from "../helpers/s3_bucket.js";
 import userCollection from "../modules/users.js";
+import groupCollection from "../modules/group.js";
+import upload_img from "../helpers/uploade_img.js";
 
 
 
@@ -17,6 +19,10 @@ const signup = async (req, res) => {
             name: joi.string().required().messages({
                 'string.empty': 'Name Cannot Be An Empty Field',
                 'any.required': 'Name Is A Required Field',
+            }),
+            user_name: joi.string().required().messages({
+                'string.empty': 'User Name Cannot Be An Empty Field',
+                'any.required': 'User Name Is A Required Field',
             }),
             email: joi.string().email().required().messages({
                 'string.empty': 'Email Cannot Be An Empty Field',
@@ -106,6 +112,7 @@ const login = async (req, res) => {
         });
         await schema.validateAsync(req.body);
         const find_user = await userCollection.findOne({ email: req.body.email });
+        console.log("find_user",find_user)
         if (find_user && find_user.is_verify === true) {
             if (find_user.password === sha1(req.body.password)) {
                 const token = jwt.sign(
@@ -435,7 +442,31 @@ const update_profile = async (req, res) => {
 }
 
 
+const create_group = async (req, res) => {
+    try {
+        const name = req.body.name;
+        if (name) {
+            const check_name = await groupCollection.findOne({ name });
+            if (check_name) {
+                return res.status(400).json({ status: false, message: "Group Already Exist" });
+            }
+            let image;
+            if (req.files) {
+                image = await upload_img(req.files.image, req);
+                // image = await uploadImageOnS3(req.files.image);
 
+            }
+            await groupCollection.create({ name, admin: req.user_id, image, members: [req.user_id] });
+            return res.status(201).json({ status: true, message: "Group Created Successfull" });
+        }
+        else {
+            return res.status(400).json({ status: false, message: "Group Name is Required" });
+        }
+    } catch (error) {
+        console.error("create_group error:", error);
+        return res.status(500).json({ status: false, message: "Internal Server Error", error });
+    }
+}
 
 
 export {
@@ -447,4 +478,5 @@ export {
     reset_password,
     profile,
     update_profile,
+    create_group
 }

@@ -3,6 +3,7 @@ import groupCollection from "../modules/group.js";
 import messageCollection from "../modules/Messages.js";
 import groupMessageCollection from "../modules/GroupMessage.js";
 import Conversation from "../modules/Conversation.js";
+import userCollection from "../modules/users.js";
 
 const setupSocket = (server) => {
     const io = new SocketIOServer(server, {
@@ -51,6 +52,21 @@ const setupSocket = (server) => {
     io.on("connection", (socket) => {
         console.log("Socket Connected:", socket.id);
 
+        socket.on("getUserList", async () => {
+            try {
+                let getUserList = await userCollection.find({ is_verify: true }).sort({ createdAt: -1 });
+                if (getUserList) {
+                    io.emit("userList", getUserList);
+                }
+                else {
+                    io.emit("userList", getUserList);
+                }
+            } catch (error) {
+                console.error("User list error", error);
+                return res.status(500).json({ status: false, message: "Internal Server Error" });
+            }
+        })
+
         socket.on("registerUser", (userId) => {
             if (!userSocketMap.has(userId)) {
                 userSocketMap.set(userId, []);
@@ -60,7 +76,6 @@ const setupSocket = (server) => {
             io.emit("updateUserStatus", getUserStatus());
         });
 
-
         socket.on("groupConversation", async (userId) => {
             try {
                 let conversations = await groupCollection
@@ -69,7 +84,7 @@ const setupSocket = (server) => {
                         path: 'members',
                         select: 'name email phone_no profile'
                     })
-                     .sort({
+                    .sort({
                         updatedAt: -1,
                     })
                     .lean();
@@ -178,6 +193,22 @@ const setupSocket = (server) => {
             }
         });
 
+        socket.on("getMessages", async (conversationId, pageNum, page_size, conversationType) => {
+            try {
+                const pageSize = page_size;
+                const skip = (pageNum - 1) * pageSize;
+                let getMessages = []
+                if (conversationType === "single") getMessages = await messageCollection.find({ conversation_id: conversationId }).sort({ createdAt: -1 }).skip(skip).limit(pageSize);
+                else getMessages = await groupMessageCollection.find({ groupId: conversationId }).sort({ createdAt: -1 }).skip(skip).limit(pageSize);
+
+                const newMsg = getMessages.length > 0 ? getMessages.reverse() : [];
+                io.to(socket.id).emit("getMessageResults", newMsg);
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+                io.emit("getMessageResults", { error: "Unable to fetch messages." });
+            }
+        });
+
         socket.on('sendMessage', async (msgContent) => {
             const {
                 conversationId,
@@ -188,6 +219,7 @@ const setupSocket = (server) => {
                 fileUrl,
                 messageType, // "text" | "image" | "video" | "file"
                 status,      // "sent" | "delivered" | "read"
+                timestamp
             } = msgContent;
 
             if (!messageType) {
@@ -208,7 +240,7 @@ const setupSocket = (server) => {
                     message,
                     fileUrl,
                     messageType,
-                    status,
+                    timestamp
                 });
 
                 const groupData = {
@@ -218,7 +250,8 @@ const setupSocket = (server) => {
                     message,
                     fileUrl,
                     messageType,
-                    status,
+                    status: addedGroupMsg.statis,
+                    timestamp
                 };
 
                 const group = await groupCollection.findById({ _id: groupId });
@@ -238,10 +271,20 @@ const setupSocket = (server) => {
 
                 if (!getConversation) {
                     let newConversation = await Conversation.create({
-                        members: [isSenderId, isReceiverId]
+                        members: [isSenderId, isReceiverId],
                     });
-                    getConversation = newConversation.toObject();
-                    io.emit("conversationCreateResult", newConversation.toObject());
+                    // getConversation = newConversation.toObject();
+                    getConversation = await Conversation.findOne({
+                        _id: newConversation._id
+                    })
+                        .populate({
+                            path: 'members',
+                            select: 'name email phone_no profile'
+                        })
+                        .sort({ updatedAt: -1 })
+                        .lean();
+
+                    io.emit("conversationCreateResult", getConversation);
                 }
                 // 💬 SINGLE CHAT
                 const addedMessage = await messageCollection.create({
@@ -251,7 +294,7 @@ const setupSocket = (server) => {
                     message,
                     fileUrl,
                     messageType,
-                    status,
+                    timestamp
                 });
 
                 const unReadMessages = await messageCollection.countDocuments({
@@ -260,7 +303,7 @@ const setupSocket = (server) => {
                     status: "sent",
                 });
 
-
+                console.log("addedMessage", addedMessage)
                 const messageData = {
                     conversation_id: getConversation._id,
                     _id: addedMessage._id,
@@ -269,8 +312,9 @@ const setupSocket = (server) => {
                     message,
                     fileUrl,
                     messageType,
-                    status,
+                    status: addedMessage.status,
                     unReadMessages,
+                    timestamp
                 };
 
                 const receiverSockets = userSocketMap.get(isReceiverId) || [];
@@ -278,6 +322,13 @@ const setupSocket = (server) => {
                 sendMessageToSockets(senderSockets, "receiveMessage", messageData);
                 sendMessageToSockets(receiverSockets, "receiveMessage", messageData);
             }
+        });
+
+        socket.on("viewMessage", async (message_id, conversationType) => {
+            if (conversationType === "single") await messageCollection.updateOne({ _id: message_id }, { status: "read" })
+            else await groupMessageCollection.updateOne({ _id: message_id }, { status: "read" })
+
+            io.emit("viewResult", { message_id, status: "read" });
         });
 
         socket.on("disconnect", () => disconnect(socket));

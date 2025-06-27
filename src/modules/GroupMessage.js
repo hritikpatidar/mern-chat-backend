@@ -28,6 +28,10 @@ const GroupMessageSchema = new mongoose.Schema(
       enum: ["sent", "delivered", "read"],
       default: "sent"
     },
+    timestamp: {
+      type: String,
+      required: true
+    }
   },
   {
     timestamps: true

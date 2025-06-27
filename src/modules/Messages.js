@@ -29,6 +29,10 @@ const MessageSchema = new mongoose.Schema(
                type: String,
                enum: ["sent", "delivered", "read"],
                default: "sent"
+          },
+          timestamp: {
+               type: String,
+               required: true
           }
      },
      {

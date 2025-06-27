@@ -6,7 +6,8 @@ dotenv.config();
 const connect_db = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URL, {
-      dbName: 'SmartFitPro'
+      // dbName: 'SmartFitPro'
+      dbName: 'mernChatApp'
     });
     console.log('DB_Connected...');
   } catch (error) {

@@ -23,6 +23,10 @@ const ConversationSchema = new mongoose.Schema(
             type: Object,
             require: false
         },
+        conversationType: {
+            type: String,
+            default: "single"
+        }
     },
     { timestamps: true }
 );

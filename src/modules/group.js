@@ -21,6 +21,10 @@ const groupSchema = new mongoose.Schema({
     image: {
         type: String,
         default: null
+    },
+    conversationType: {
+        type: String,
+        default: "group"
     }
 },
     {
