@@ -347,6 +347,17 @@ const setupSocket = (server) => {
         });
 
 
+        socket.on("typing", async (conversation_id, senderId) => {
+            console.log("conversation_id", conversation_id)
+            io.emit('userTyping', { conversation_id, userId: senderId });
+
+        });
+        socket.on("stopTyping", async (conversation_id, senderId) => {
+            io.emit('userStopTyping', { conversation_id, userId: senderId });
+
+        });
+
+
         socket.on("disconnect", () => disconnect(socket));
     });
 };
