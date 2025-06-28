@@ -250,7 +250,7 @@ const setupSocket = (server) => {
                     message,
                     fileUrl,
                     messageType,
-                    status: addedGroupMsg.statis,
+                    status: addedGroupMsg.status,
                     timestamp
                 };
 
