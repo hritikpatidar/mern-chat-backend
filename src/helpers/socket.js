@@ -99,10 +99,10 @@ const setupSocket = (server) => {
 
 
                 const value = await Promise.all(conversations.map(async (conversation) => {
-
                     const unReadMessages = await groupMessageCollection.countDocuments({
                         groupId: conversation._id,
-                        status: "sent",
+                        // senderId: userId,
+                        status: "delivered",
                     })
 
                     const latestMessage = await groupMessageCollection.findOne({ groupId: conversation._id }).sort({
@@ -236,7 +236,7 @@ const setupSocket = (server) => {
                 // 👥 GROUP CHAT
                 const addedGroupMsg = await groupMessageCollection.create({
                     groupId,
-                    senderId: isSenderId,
+                    isSenderId: isSenderId,
                     message,
                     fileUrl,
                     messageType,
@@ -348,7 +348,6 @@ const setupSocket = (server) => {
 
 
         socket.on("typing", async (conversation_id, senderId) => {
-            console.log("conversation_id", conversation_id)
             io.emit('userTyping', { conversation_id, userId: senderId });
 
         });
